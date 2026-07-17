@@ -1,0 +1,6 @@
+{
+  "name": "ก๊วนศุกร์หรรษา - ระบบจัดการแบดมินตัน",
+  "description": "ระบบจัดผู้เล่นลงสนามแบดมินตัน บันทึกคะแนน สถิติ จองสนาม สรุปค่าใช้จ่าย พร้อมสแกน QR Code สำหรับก๊วนศุกร์หรรษา",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
