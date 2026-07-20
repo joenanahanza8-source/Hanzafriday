@@ -38,20 +38,35 @@ export default function App() {
   // Core Data States
   const [players, setPlayers] = useState<Player[]>(() => {
     const saved = localStorage.getItem('suk_players');
-    return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
+    const parsed = saved ? JSON.parse(saved) : INITIAL_PLAYERS;
+    // Auto-detect and reset old hardcoded mock data for a clean production slate
+    if (Array.isArray(parsed) && parsed.some(p => p.id === 'p1' || p.id === 'p2')) {
+      localStorage.removeItem('suk_players');
+      localStorage.removeItem('suk_bookings');
+      localStorage.removeItem('suk_matches');
+      localStorage.removeItem('suk_notifications');
+      return [];
+    }
+    return parsed;
   });
 
   const [bookings, setBookings] = useState<Booking[]>(() => {
+    const savedPlayers = localStorage.getItem('suk_players');
+    if (!savedPlayers) return [];
     const saved = localStorage.getItem('suk_bookings');
     return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
   });
 
   const [matches, setMatches] = useState<Match[]>(() => {
+    const savedPlayers = localStorage.getItem('suk_players');
+    if (!savedPlayers) return [];
     const saved = localStorage.getItem('suk_matches');
     return saved ? JSON.parse(saved) : INITIAL_MATCHES;
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    const savedPlayers = localStorage.getItem('suk_players');
+    if (!savedPlayers) return [];
     const saved = localStorage.getItem('suk_notifications');
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
@@ -340,19 +355,19 @@ export default function App() {
   const totalCostToday = totalCourtCollected + totalShuttleCollected;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16 relative">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-16 relative">
       
       {/* Realtime Floating Push Banner Alert */}
       {alertBanner && (
-        <div className="fixed top-5 right-5 z-50 max-w-sm w-full bg-slate-900 border border-emerald-500/40 rounded-2xl p-4 shadow-2xl flex items-start gap-3.5 animate-bounce backdrop-blur-sm">
-          <div className="h-9 w-9 shrink-0 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+        <div className="fixed top-5 right-5 z-50 max-w-sm w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-2xl flex items-start gap-3.5 animate-bounce backdrop-blur-sm">
+          <div className="h-9 w-9 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <Bell className="h-5 w-5 animate-pulse" />
           </div>
           <div className="text-left flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-emerald-400">{alertBanner.title}</h4>
-            <p className="text-[11px] text-slate-300 mt-1 leading-normal">{alertBanner.body}</p>
+            <h4 className="text-xs font-bold text-emerald-600">{alertBanner.title}</h4>
+            <p className="text-[11px] text-slate-600 mt-1 leading-normal">{alertBanner.body}</p>
           </div>
-          <button onClick={() => setAlertBanner(null)} className="text-slate-500 hover:text-white text-xs font-bold px-1">
+          <button onClick={() => setAlertBanner(null)} className="text-slate-400 hover:text-slate-600 text-xs font-bold px-1">
             ✕
           </button>
         </div>
@@ -469,32 +484,34 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         
         {/* Top Dashboard KPI Row (Professional Polish Design Pattern) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">สมาชิกทั้งหมด</p>
-            <p className="text-xl md:text-2xl font-black text-slate-900">
-              {totalPlayersCount} <span className="text-xs font-normal text-slate-500">คน</span>
-            </p>
+        {isAdmin && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">สมาชิกทั้งหมด</p>
+              <p className="text-xl md:text-2xl font-black text-slate-900">
+                {totalPlayersCount} <span className="text-xs font-normal text-slate-500">คน</span>
+              </p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">จองสนามวันนี้</p>
+              <p className="text-xl md:text-2xl font-black text-slate-900">
+                {bookedHoursCount} <span className="text-xs font-normal text-slate-500">ชั่วโมง</span>
+              </p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">แมตช์ที่บันทึกแล้ว</p>
+              <p className="text-xl md:text-2xl font-black text-slate-900">
+                {totalMatchesCount.toLocaleString()} <span className="text-xs font-normal text-slate-500">เกม</span>
+              </p>
+            </div>
+            <div className="bg-emerald-600 border border-emerald-500 rounded-2xl p-4.5 shadow-md text-left text-white animate-pulse">
+              <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-wider mb-1 font-sans">ยอดรวมวันนี้</p>
+              <p className="text-xl md:text-2xl font-black text-white">
+                ฿ {totalCostToday.toFixed(2)}
+              </p>
+            </div>
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">จองสนามวันนี้</p>
-            <p className="text-xl md:text-2xl font-black text-slate-900">
-              {bookedHoursCount} <span className="text-xs font-normal text-slate-500">ชั่วโมง</span>
-            </p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm text-left">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 font-sans">แมตช์ที่บันทึกแล้ว</p>
-            <p className="text-xl md:text-2xl font-black text-slate-900">
-              {totalMatchesCount.toLocaleString()} <span className="text-xs font-normal text-slate-500">เกม</span>
-            </p>
-          </div>
-          <div className="bg-emerald-600 border border-emerald-500 rounded-2xl p-4.5 shadow-md text-left text-white animate-pulse">
-            <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-wider mb-1 font-sans">ยอดรวมวันนี้</p>
-            <p className="text-xl md:text-2xl font-black text-white">
-              ฿ {totalCostToday.toFixed(2)}
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Navigation Tabs bar */}
         <div className="flex overflow-x-auto gap-2 bg-white border border-slate-200 p-1.5 rounded-2xl mb-6 scrollbar-none shadow-sm">
@@ -624,16 +641,16 @@ export default function App() {
       </main>
 
       {/* Floating Status Bar / Footer */}
-      <footer className="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800/60 py-2.5 text-center text-[10px] text-slate-500 flex items-center justify-center gap-4 z-30">
-        <span className="font-bold text-slate-400">ก๊วนศุกร์หรรษา © 2026</span>
-        <span className="text-slate-700">|</span>
+      <footer className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 py-2.5 text-center text-[10px] text-slate-500 flex items-center justify-center gap-4 z-30 shadow-md">
+        <span className="font-bold text-slate-600">ก๊วนศุกร์หรรษา © 2026</span>
+        <span className="text-slate-300">|</span>
         <span className="flex items-center gap-1">
-          <Smartphone className="h-3 w-3 text-emerald-500" />
+          <Smartphone className="h-3 w-3 text-emerald-600" />
           ซิงค์อุปกรณ์: มือถือ/แท็บเล็ตเรียลไทม์
         </span>
-        <span className="text-slate-700">|</span>
-        <span className="flex items-center gap-1.5 text-slate-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+        <span className="text-slate-300">|</span>
+        <span className="flex items-center gap-1.5 text-slate-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse animate-duration-1000"></span>
           ระบบฐานข้อมูลจำลองคลาวด์เปิดทำงาน
         </span>
       </footer>

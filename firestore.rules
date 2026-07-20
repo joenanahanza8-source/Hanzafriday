@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default deny all to prevent unauthorized database scraping
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable global helper functions for security and validation
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Bookings collection rules matching user intent
+    match /bookings/{bookingId} {
+      allow read: if true; // เปิดให้ทุกคนดูข้อมูลการจองได้ (Public read access)
+      allow write: if isSignedIn() && isValidId(bookingId); // อนุญาตให้เพิ่ม/แก้ไขเฉพาะผู้ที่เข้าสู่ระบบ (Only logged-in users can write)
+    }
+  }
+}

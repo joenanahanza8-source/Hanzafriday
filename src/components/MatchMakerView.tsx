@@ -44,7 +44,7 @@ export default function MatchMakerView({
   const [scoreB, setScoreB] = useState<Record<string, number>>({});
 
   // Player waiting queue
-  const [waitingQueue, setWaitingQueue] = useState<string[]>(['p3', 'p4', 'p5', 'p6', 'p7']);
+  const [waitingQueue, setWaitingQueue] = useState<string[]>([]);
 
   const activeMatches = matches.filter(m => m.status === 'active');
   const waitingMatches = matches.filter(m => m.status === 'waiting');
